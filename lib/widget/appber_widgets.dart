@@ -11,17 +11,14 @@ class AppBerTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Align(
-        alignment: Alignment.center,
-        child: Text(
-          title,
-          style: TextStyle(
-              color: Colors.black,
-              fontFamily: 'Acme',
-              fontSize: 30,
-              letterSpacing: 1.5,),
-          textAlign: TextAlign.center,
-        ),
+      child: Text(
+        title,
+        style: TextStyle(
+            color: Colors.black,
+            fontFamily: 'Acme',
+            fontSize: 30,
+            letterSpacing: 1.2,),
+
       ),
     );
   }
