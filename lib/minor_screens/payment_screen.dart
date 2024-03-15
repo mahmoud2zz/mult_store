@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mult_store/minor_screens/payment_screen.dart';
 import 'package:mult_store/widget/yellow_button.dart';
 import 'package:provider/provider.dart';
+import 'package:sn_progress_dialog/progress_dialog.dart';
+import 'package:uuid/uuid.dart';
 
 import '../customer_screens/wilshlist_.dart';
 import '../main_screens/profile.dart';
@@ -13,8 +16,22 @@ import '../widget/alert_dialog.dart';
 import '../widget/appber_widgets.dart';
 import '../widget/categ_widgets.dart';
 
-class PaymentScreen extends StatelessWidget {
+class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
+
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  late String orderId;
+  int selectedValue = 1;
+
+  void showProgress() {
+    ProgressDialog progressDialog = ProgressDialog(context: context);
+    progressDialog.show(
+        max: 100, msg: 'place wait..', progressBgColor: Colors.red);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,26 +112,31 @@ class PaymentScreen extends StatelessWidget {
                                 ),
                                 Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       ' Total order',
-                                      style: TextStyle(fontSize: 16,color: Colors.grey),
+                                      style: TextStyle(
+                                          fontSize: 16, color: Colors.grey),
                                     ),
-                                    Text('${totalPrice.toStringAsFixed(2)} USD ',
-                                        style: TextStyle(fontSize: 16,color: Colors.grey))
+                                    Text(
+                                        '${totalPrice.toStringAsFixed(2)} USD ',
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.grey))
                                   ],
                                 ),
                                 Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Shippin Coast',
-                                      style: TextStyle(fontSize: 16,color: Colors.grey),
+                                      style: TextStyle(
+                                          fontSize: 16, color: Colors.grey),
                                     ),
-                                    Text('10.0  '+('USD'),
-                                        style: TextStyle(fontSize: 16,color: Colors.grey))
+                                    Text('10.0  ' + ('USD'),
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.grey))
                                   ],
                                 ),
                               ],
@@ -125,11 +147,82 @@ class PaymentScreen extends StatelessWidget {
                           height: 20,
                         ),
                         Expanded(
-                            child: Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15)),
-                        ))
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15)),
+                            child: Column(
+                              children: [
+                                LabeledRadio(
+                                  title: 'Cash on Delivery',
+                                  widget: Text('Pay Cash  At Home'),
+                                  groupValue: selectedValue,
+                                  value: 1,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedValue = value!;
+                                    });
+                                  },
+                                ),
+                                LabeledRadio(
+                                  title: 'Pay via visa / Master Card',
+                                  widget: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.payment_outlined,
+                                        color: Colors.blue,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 15),
+                                        child: Icon(
+                                          FontAwesomeIcons.ccMastercard,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                      Icon(
+                                        FontAwesomeIcons.ccVisa,
+                                        color: Colors.blue,
+                                      )
+                                    ],
+                                  ),
+                                  groupValue: selectedValue,
+                                  value: 2,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedValue = value!;
+                                    });
+                                  },
+                                ),
+                                LabeledRadio(
+                                  title: 'Pay via Paypal',
+                                  widget: Row(
+                                    children: [
+                                      Icon(
+                                        FontAwesomeIcons.paypal,
+                                        color: Colors.blue,
+                                      ),
+                                      SizedBox(
+                                        width: 15,
+                                      ),
+                                      Icon(
+                                        FontAwesomeIcons.ccPaypal,
+                                        color: Colors.blue,
+                                      ),
+                                    ],
+                                  ),
+                                  groupValue: selectedValue,
+                                  value: 3,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedValue = value!;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),
@@ -140,10 +233,114 @@ class PaymentScreen extends StatelessWidget {
                       child: YellowButton(
                         label:
                             'Confirm ${context.watch<Cart>().totalPrice.toStringAsFixed(2)} USD',
-                        onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => PaymentScreen())),
+                        onPressed: () {
+                          if (selectedValue == 1) {
+                            showModalBottomSheet(
+                                context: (context),
+                                builder: (context) => SizedBox(
+                                      width:
+                                          MediaQuery.of(context).size.width * 1,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.3,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(bottom: 100),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Text(
+                                              'Pay at Home ${totalPaid.toStringAsFixed(2)} \$',
+                                              style: TextStyle(fontSize: 24),
+                                            ),
+                                            YellowButton(
+                                                label:
+                                                    'Confirm${totalPrice.toStringAsFixed(2)}',
+                                                onPressed: () async {
+                                                  showProgress();
+                                                  for (var item in context
+                                                      .read<Cart>()
+                                                      .getItems) {
+                                                    CollectionReference
+                                                        orderRef =
+                                                        FirebaseFirestore
+                                                            .instance
+                                                            .collection(
+                                                                'orders');
+                                                    orderId = Uuid().v4();
+                                                    await orderRef
+                                                        .doc(orderId)
+                                                        .set({
+                                                      'cid': data['cid'],
+                                                      'custName': data['name'],
+                                                      'email': data['email'],
+                                                      'address':
+                                                          data['address'],
+                                                      'phone': data['phone'],
+                                                      'profileImage':
+                                                          data['profileImage'],
+                                                      'sid': item.suppId,
+                                                      'proId': item.documentId,
+                                                      'orderId': orderId,
+                                                      'orderName': item.name,
+                                                      'orderImage':
+                                                          item.imageUrl.first,
+                                                      'orderPrice': item.price,
+                                                      'orderQty': item.qty,
+                                                      'deliveryStatus':
+                                                          'preparing',
+                                                      'deliveryData': '',
+                                                      'orderDate':
+                                                          DateTime.now(),
+                                                      'paymentsStatus':
+                                                          'cash on delivery',
+                                                      'orderReview': false
+                                                    }).whenComplete(() async {
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .runTransaction(
+                                                              (transaction) async {
+                                                        DocumentReference
+                                                            documentReference =
+                                                            FirebaseFirestore
+                                                                .instance
+                                                                .collection(
+                                                                    'products')
+                                                                .doc(item
+                                                                    .documentId);
+                                                        DocumentSnapshot
+                                                            documentSnapshot =
+                                                            await transaction.get(
+                                                                documentReference);
+                                                        transaction.update(
+                                                            documentReference, {
+                                                          'instock':
+                                                              documentSnapshot[
+                                                                      'instock'] -
+                                                                  item.qty,
+                                                        });
+                                                      });
+                                                    });
+                                                  }
+                                                  context
+                                                      .read<Cart>()
+                                                      .clearCart();
+                                                  Navigator.popUntil(
+                                                      context,
+                                                      ModalRoute.withName(
+                                                          '/customer_home'));
+                                                },
+                                                width: 0.9)
+                                          ],
+                                        ),
+                                      ),
+                                    ));
+                          } else if (selectedValue == 2) {
+                            print('print vise');
+                          } else if (selectedValue == 3) {
+                            print('print paypal');
+                          }
+                        },
                         width: 1,
                       ),
                     ),
@@ -156,5 +353,48 @@ class PaymentScreen extends StatelessWidget {
             child: CircularProgressIndicator(),
           );
         });
+  }
+}
+
+class LabeledRadio extends StatelessWidget {
+  final String title;
+  final Widget widget;
+  final int groupValue;
+  final int value;
+  final Function onChanged;
+
+  const LabeledRadio(
+      {super.key,
+      required this.title,
+      required this.widget,
+      required this.groupValue,
+      required this.value,
+      required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        if (value != groupValue) {
+          onChanged(value);
+        }
+      },
+      child: ListTile(
+        leading: Icon(
+          Icons.attach_money,
+          color: Colors.blue,
+          size: 35,
+        ),
+        title: Text(title),
+        subtitle: widget,
+        trailing: Radio<int>(
+          groupValue: groupValue,
+          value: value,
+          onChanged: (newValue) {
+            onChanged(newValue);
+          },
+        ),
+      ),
+    );
   }
 }

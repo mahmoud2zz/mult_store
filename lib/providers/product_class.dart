@@ -1,12 +1,12 @@
 
 class Product {
-  String name;
-  double price;
-  int qty;
-  int qntty;
-  List imageUrl;
-  String documentId;
-  String suppId;
+  late String name;
+  late  double price;
+  late dynamic qty;
+  late dynamic qntty;
+  late List imageUrl;
+  late String documentId;
+  late String suppId;
 
   Product(
       {required this.name,

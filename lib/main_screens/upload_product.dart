@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -23,20 +22,17 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
       GlobalKey<ScaffoldMessengerState>();
 
   late double price;
-  late int quantity;
+  late int? quantity;
   late String proName;
   late String proDesc;
-  late String _uid;
-
   String mainCateValue = 'select category';
   String subCateValue = 'subcategory';
   List<String> subCateList = [];
   List<String> imagesUrlList = [];
   List<XFile>? imagesFileList = [];
   dynamic pickedError;
-  bool processing=false;
-
-
+  int? discount = 0;
+  bool processing = false;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -45,14 +41,18 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
       var pickedImage = await _picker.pickMultiImage(
           maxHeight: 300, maxWidth: 300, imageQuality: 95);
       setState(() {
+        print('---23');
+        print(pickedImage);
+
         imagesFileList = pickedImage;
+        print(imagesFileList);
+
         print('______________1');
-        print(imagesUrlList);
       });
     } catch (e) {
       setState(() {
         pickedError = e;
-        print('______________4');
+        print('______________3');
         print(e);
       });
       print(pickedError);
@@ -67,28 +67,34 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
         });
   }
 
- Future<void> uploadImage() async {
-   print('----2');
+  Future<void> uploadImage() async {
+
     if (mainCateValue != 'select category' && subCateValue != 'subcategory') {
       if (_formKey.currentState!.validate()) {
         _formKey.currentState!.save();
         if (imagesFileList!.isNotEmpty) {
           setState(() {
-            processing=true;
+            processing = true;
           });
           try {
             for (var image in imagesFileList!) {
               firebase_storage.Reference ref = firebase_storage
                   .FirebaseStorage.instance
                   .ref('products/${path.basename(image.path)}');
-              await ref.putFile(File(image.path)).whenComplete(() {
-                print('----2');
-                print('----4');
+              print(ref.fullPath);
+              print('++++@');
+               await ref.putFile(File(image.path)).whenComplete(() {
                 ref.getDownloadURL().then((value) {
                   print('----4');
+                  print(value);
+                setState(() {
                   imagesUrlList.add(value);
-                }).catchError((e){
-                  print('===========');
+                  print(imagesUrlList.length);
+                  print('===========111');
+
+                });
+                }).catchError((e) {
+                  print('===========1');
                   print(e);
                 });
               });
@@ -96,28 +102,24 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
           } catch (e) {
             print(e);
           }
-
-
-
         } else {
           setState(() {
-            processing=false;
+            processing = false;
           });
 
           MyMessagesHandler.showSankBar(_scaffoldKey, 'pleas pick images');
         }
       } else {
         setState(() {
-          processing=false;
+          processing = false;
         });
 
         MyMessagesHandler.showSankBar(_scaffoldKey, 'pleas fill fields');
       }
     } else {
       setState(() {
-        processing=false;
+        processing = false;
       });
-
 
       MyMessagesHandler.showSankBar(_scaffoldKey, 'pleas selected category');
     }
@@ -127,10 +129,10 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
     if (imagesUrlList.isNotEmpty) {
       CollectionReference products =
           FirebaseFirestore.instance.collection('products');
-      String proId=const Uuid().v4();
+      String proId =  Uuid().v4();
       print(proId);
       products.doc(proId).set({
-        'proId':proId,
+        'proId': proId,
         'mainCate': mainCateValue,
         'subCate': subCateValue,
         'price': price,
@@ -139,33 +141,39 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
         'proDesc': proDesc,
         'sid': FirebaseAuth.instance.currentUser!.uid,
         'proImages': imagesUrlList,
-        'discount': 0
+        'discount': discount,
       }).whenComplete(() {
-        print('_____________');
-       setState(() {
-         processing=false;
-         imagesFileList = [];
-         mainCateValue = 'select category';
-         subCateList=[];
-         imagesUrlList=[];
-       });
-       _formKey.currentState!.reset();
+        print('000000000');
+        setState(() {
+          processing = false;
+          imagesFileList = [];
+          mainCateValue = 'select category';
+          subCateList = [];
+          imagesUrlList = [];
+        });
+        _formKey.currentState!.reset();
+
+      }).catchError((e){
+        print(e);
+        setState(() {
+          processing=false;
+          imagesFileList=[];
+        });
+        _formKey.currentState!.reset();
 
       });
     } else {
+ print('qqq');
       print('no images');
+
+    _formKey.currentState!.reset();
+
     }
   }
 
-  uploadProduct()async{
-   await uploadImage().whenComplete(()=> uploadData());
-
+  uploadProduct() async {
+    await uploadImage().whenComplete(() => uploadData());
   }
-
-
-
-
-
 
   void selectedMainCategory(String? value) {
     if (value == 'select category') {
@@ -301,30 +309,60 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
                       thickness: 1.5,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: MediaQuery.sizeOf(context).width * 0.4,
-                      child: TextFormField(
-                        onSaved: (value) {
-                          price = double.parse(value!);
-                        },
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return 'pleas enter price';
-                          } else if (value.isValidatorPrice() == true) {
-                            return 'invalid price';
-                          }
-                          return null;
-                        },
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
-                        decoration: textFromDecoration.copyWith(
-                          labelText: 'price',
-                          hintText: 'price...',
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: MediaQuery.sizeOf(context).width * 0.4,
+                          child: TextFormField(
+                            onSaved: (value) {
+                              price = double.parse(value!);
+                            },
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'pleas enter price';
+                              } else if (value.isValidatorPrice() == true) {
+                                return 'invalid price';
+                              }
+                              return null;
+                            },
+                            keyboardType:
+                                TextInputType.numberWithOptions(decimal: true),
+                            decoration: textFromDecoration.copyWith(
+                              labelText: 'price',
+                              hintText: 'price...',
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: MediaQuery.sizeOf(context).width * 0.4,
+                          child: TextFormField(
+                            maxLength: 2,
+                            onSaved: (value) {
+                              discount = int.parse(value!);
+                            },
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return null;
+                              } else if (value.isValidatorDiscount() == true) {
+                                return 'invalid discount';
+                              }
+                              return null;
+                            },
+                            keyboardType:
+                                TextInputType.numberWithOptions(decimal: true),
+                            decoration: textFromDecoration.copyWith(
+                              labelText: 'discount',
+                              hintText: 'discount..%',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -426,14 +464,18 @@ class _UploadProductScreenState extends State<UploadProductScreen> {
             ),
             FloatingActionButton(
               backgroundColor: Colors.yellow,
-              onPressed:    processing==true? () {
-               null;
-              }:(){
-                uploadProduct();
-              },
-              child:processing==true? CircularProgressIndicator(color: Colors.black,): Icon(
-                  Icons.upload,
-                  color: Colors.black),
+              onPressed: processing == true
+                  ? () {
+                      null;
+                    }
+                  : () {
+                      uploadProduct();
+                    },
+              child: processing == true
+                  ? CircularProgressIndicator(
+                      color: Colors.black,
+                    )
+                  : Icon(Icons.upload, color: Colors.black),
             )
           ],
         ),
@@ -463,5 +505,11 @@ extension PriceValidator on String {
   bool isValidatorPrice() {
     return RegExp(r'^(([1_9][0_9]*[\.]*)||([0][\.])([0_9]{1,2}))$')
         .hasMatch(this);
+  }
+}
+
+extension DiscountValidator on String {
+  bool isValidatorDiscount() {
+    return RegExp(r'^([0_9]*)$').hasMatch(this);
   }
 }

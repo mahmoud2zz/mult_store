@@ -41,11 +41,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    existingItemCart = context
-        .read<Cart>()
-        .getItems
-        .firstWhereOrNull((element) =>
-    widget.proList['proId'] == element.documentId);
+    existingItemCart = context.read<Cart>().getItems.firstWhereOrNull(
+        (element) => widget.proList['proId'] == element.documentId);
 
     List<dynamic> imagesList = widget.proList['proImages'];
     print(existingItemCart);
@@ -150,8 +147,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     var existingItemWishList = context
                                         .read<Wish>()
                                         .getWishItems
-                                        .firstWhereOrNull(
-                                            (product) => product.documentId == widget.proList['proId']);
+                                        .firstWhereOrNull((product) =>
+                                            product.documentId ==
+                                            widget.proList['proId']);
                                     existingItemWishList != null
                                         ? context
                                             .read<Cart>()
@@ -182,14 +180,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         ))
                             ],
                           ),
-                          Text(
-                            (widget.proList['instock'].toString()) +
-                                ('99 pieces availabel is stock').toString(),
-                            style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600),
-                          ),
+                          widget.proList['instock'] <=0
+                              ? Text(
+                                  'The item is out of stock',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600),
+                                )
+                              : Text(
+                                  (widget.proList['instock'].toString()) +
+                                      (' pieces availbale in  stock')
+                                          .toString(),
+                                  style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600),
+                                ),
                           ProductDetailsHeader(
                             label: ' Item Descriprtion',
                           ),
@@ -281,7 +288,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 builder: (context) =>
                                     const CartScreen(back: AppBeckButton()))),
                         icon: badges.Badge(
-                          showBadge: context.read<Cart>().getItems.isNotEmpty?true:false,
+                          showBadge: context.read<Cart>().getItems.isNotEmpty
+                              ? true
+                              : false,
                           badgeStyle:
                               badges.BadgeStyle(badgeColor: Colors.yellow),
                           badgeContent: Text(
@@ -294,21 +303,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           child: Icon(Icons.shopping_cart),
                         )),
                     YellowButton(
-                      label: existingItemCart !=null? 'added to cart' :'ADD TO CART',
+                      label: existingItemCart != null
+                          ? 'added to cart'
+                          : 'ADD TO CART',
                       onPressed: () {
-
-                        print(existingItemCart);
-                        existingItemCart != null
-                            ? MyMessagesHandler.showSankBar(_scaffoldKey,
-                                'this item alreay in cart your cart')
-                            : context.read<Cart>().addItems(
-                                widget.proList['proName'],
-                                widget.proList['price'],
-                                1,
-                                widget.proList['instock'],
-                                widget.proList['proImages'],
-                                widget.proList['proId'],
-                                widget.proList['sid']);
+                        if (widget.proList['instock'] == 0) {
+                          MyMessagesHandler.showSankBar(
+                              _scaffoldKey, 'this item out of stock');
+                        } else if (existingItemCart != null) {
+                          MyMessagesHandler.showSankBar(_scaffoldKey,
+                              'this item alreay in cart your cart');
+                        } else {
+                          context.read<Cart>().addItems(
+                              widget.proList['proName'],
+                              widget.proList['price'],
+                              1,
+                              widget.proList['instock'],
+                              widget.proList['proImages'],
+                              widget.proList['proId'],
+                              widget.proList['sid']);
+                        }
                       },
                       width: 0.5,
                     )

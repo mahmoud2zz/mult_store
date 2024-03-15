@@ -19,7 +19,7 @@ class Cart extends ChangeNotifier {
 
   int get count => _list.length;
 
-  void addItems(String nameee, double price, int qty, int qntty, List imageUrl,
+  void addItems(String nameee, double price, dynamic qty, dynamic qntty, List imageUrl,
       String documentId, String suppId) {
     Product product = Product(
         name: nameee,
